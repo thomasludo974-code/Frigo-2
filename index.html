@@ -1,93 +1,198 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Frigo Connecté</title>
-    <style>
-        :root { --bg: #0e1117; --surface: #161b26; --border: #252d3d; --text: #e8ecf4; --accent: #5b8af0; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; }
-        .card { background: var(--surface); border: 1px solid var(--border); padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; }
-        input, select, button { padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid var(--border); background: #0e1117; color: white; }
-        button { background: var(--accent); cursor: pointer; font-weight: bold; }
-        .qty-controls button { padding: 5px 10px; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mon Frigo & Placard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0e1117; --surface: #161b26; --border: #252d3d; --muted: #3a4358;
+      --text: #e8ecf4; --text-dim: #7b87a0; --accent: #5b8af0; --accent-glow: rgba(91,138,240,.25);
+      --ok: #1b2a1e; --ok-border: #2d5c35; --ok-text: #6fcf84;
+      --warn: #2c2010; --warn-border:#8c5a10; --warn-text: #f5a623;
+      --danger: #2a1215; --danger-border:#7a2228; --danger-text:#f76d7a;
+      --radius: 12px; --radius-sm: 8px; --font-head: 'Syne', sans-serif; --font-mono: 'DM Mono', monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font-head); min-height: 100vh; padding: 0 0 80px; }
+    header { display: flex; align-items: center; gap: 14px; padding: 28px 24px 20px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, #131827 0%, var(--bg) 100%); }
+    header h1 { font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 800; }
+    header h1 span { color: var(--accent); }
+    #item-count { margin-left: auto; font-family: var(--font-mono); font-size: .75rem; color: var(--text-dim); background: var(--surface); border: 1px solid var(--border); padding: 4px 10px; border-radius: 99px; }
+    main { max-width: 780px; margin: 0 auto; padding: 0 16px; }
+    .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin: 24px 0 28px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+    .form-grid input, .form-grid select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: var(--font-mono); font-size: .85rem; padding: 10px 12px; outline: none; }
+    .btn-add { width: 100%; padding: 11px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--font-head); font-weight: 600; cursor: pointer; grid-column: 1 / -1; }
+    .location-tabs { display: flex; margin: 20px 0 0; border-bottom: 2px solid var(--border); }
+    .loc-tab { background: none; border: none; border-bottom: 2px solid transparent; padding: 10px 20px; color: var(--text-dim); font-weight: 600; cursor: pointer; }
+    .loc-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .search-wrap { position: relative; margin: 16px 0; }
+    #search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); padding: 10px 15px; outline: none; }
+    .product-card { display: grid; grid-template-columns: 1fr auto; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
+    .product-card.expired { background: var(--danger); border-color: var(--danger-border); }
+    .product-card.soon { background: var(--warn); border-color: var(--warn-border); }
+    .tag { font-family: var(--font-mono); font-size: .7rem; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--border); color: var(--text-dim); }
+    .qty-btn { width: 30px; height: 30px; background: var(--bg); border: 1px solid var(--border); color: var(--text); cursor: pointer; }
+    .btn-delete { background: none; border: 1px solid var(--muted); color: var(--text-dim); font-size: .7rem; padding: 4px 8px; cursor: pointer; margin-top: 5px; }
+  </style>
 </head>
 <body>
 
-    <h1>🧊 Mon Frigo</h1>
-    
-    <div style="background: var(--surface); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-        <input type="text" id="name" placeholder="Nom du produit">
-        <input type="number" id="qty" value="1">
-        <select id="loc">
-            <option value="fridge">Frigo</option>
-            <option value="pantry">Placard</option>
-        </select>
-        <button id="addBtn">Ajouter</button>
+<header>
+  <h1>Mon <span>Frigo</span></h1>
+  <span id="item-count">0 produit</span>
+</header>
+
+<main>
+  <div class="location-tabs">
+    <button class="loc-tab active" data-loc="fridge">🧊 Frigo <span id="badge-fridge">0</span></button>
+    <button class="loc-tab" data-loc="pantry">🗄️ Placard <span id="badge-pantry">0</span></button>
+  </div>
+
+  <div class="form-card">
+    <div class="form-grid">
+      <input type="text" id="input-name" placeholder="Produit" />
+      <input type="number" id="input-qty" value="1" min="1" />
+      <input type="date" id="input-date" />
+      <select id="input-location">
+        <option value="fridge">🧊 Frigo</option>
+        <option value="pantry">🗄️ Placard</option>
+      </select>
+      <select id="input-category"><option value="">Catégorie...</option></select>
+      <button class="btn-add" id="btn-add">Ajouter</button>
     </div>
+  </div>
 
-    <div id="list"></div>
+  <div class="search-wrap">
+    <input type="text" id="search-input" placeholder="Rechercher..." />
+  </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  <div id="product-list"></div>
+</main>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCy7Csyy5KRJBiMbVER5E4knayzDuz4cso",
-            authDomain: "frigo-bf9f2.firebaseapp.com",
-            projectId: "frigo-bf9f2",
-            storageBucket: "frigo-bf9f2.firebasestorage.app",
-            messagingSenderId: "658029751960",
-            appId: "1:658029751960:web:1fda5041c98cb042286aed"
-        };
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const frigoRef = collection(db, "frigo");
+  // TES CLES FIREBASE (NE PAS TRADUIRE)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCy7Csyy5KRJBiMbVER5E4knayzDuz4cso",
+    authDomain: "frigo-bf9f2.firebaseapp.com",
+    projectId: "frigo-bf9f2",
+    storageBucket: "frigo-bf9f2.firebasestorage.app",
+    messagingSenderId: "658029751960",
+    appId: "1:658029751960:web:1fda5041c98cb042286aed"
+  };
 
-        // Ajouter
-        document.getElementById('addBtn').onclick = async () => {
-            const name = document.getElementById('name').value;
-            const qty = parseInt(document.getElementById('qty').value);
-            const location = document.getElementById('loc').value;
-            if (name) {
-                await addDoc(frigoRef, { name, qty, location });
-                document.getElementById('name').value = '';
-            }
-        };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-        // Lire en temps réel
-        onSnapshot(frigoRef, (snapshot) => {
-            const listEl = document.getElementById('list');
-            listEl.innerHTML = '';
-            snapshot.forEach(docSnap => {
-                const p = docSnap.data();
-                const id = docSnap.id;
-                listEl.innerHTML += `
-                    <div class="card">
-                        <div>
-                            <strong>${p.name}</strong> (${p.location === 'fridge' ? '❄️' : '📦'})
-                        </div>
-                        <div class="qty-controls">
-                            <button onclick="updateQty('${id}', ${p.qty - 1})">-</button>
-                            <span>${p.qty}</span>
-                            <button onclick="updateQty('${id}', ${p.qty + 1})">+</button>
-                            <button style="background:red" onclick="deleteItem('${id}')">🗑</button>
-                        </div>
-                    </div>
-                `;
-            });
-        });
+  const CATEGORIES = {
+    fridge: [{value:'viande', label:'🥩 Viande'}, {value:'laitier', label:'🧀 Lait'}, {value:'legumes', label:'🥦 Légumes'}, {value:'boissons', label:'🥤 Boissons'}],
+    pantry: [{value:'pates', label:'🍝 Pâtes/Riz'}, {value:'conserve', label:'🥫 Conserves'}, {value:'biscuits', label:'🍪 Snacks'}]
+  };
+  const CATEGORY_LABELS = {};
+  [...CATEGORIES.fridge, ...CATEGORIES.pantry].forEach(c => CATEGORY_LABELS[c.value] = c.label);
 
-        window.updateQty = async (id, newQty) => {
-            if (newQty <= 0) deleteItem(id);
-            else await updateDoc(doc(db, "frigo", id), { qty: newQty });
-        };
+  let products = [];
+  let activeLocation = 'fridge';
+  let searchQuery = '';
+  let editingId = null;
 
-        window.deleteItem = async (id) => {
-            if (confirm("Supprimer ?")) await deleteDoc(doc(db, "frigo", id));
-        };
-    </script>
+  const daysUntil = (d) => d ? Math.round((new Date(d) - new Date().setHours(0,0,0,0)) / 86400000) : Infinity;
+  const getStatus = (p) => { const d = daysUntil(p.date); return d < 0 ? 'expired' : d <= 3 ? 'soon' : 'ok'; };
+
+  function render() {
+    const container = document.getElementById('product-list');
+    document.getElementById('badge-fridge').textContent = products.filter(p => p.location === 'fridge').length;
+    document.getElementById('badge-pantry').textContent = products.filter(p => p.location === 'pantry').length;
+    
+    let visible = products.filter(p => (p.location || 'fridge') === activeLocation);
+    if (searchQuery) visible = visible.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    container.innerHTML = visible.map(p => `
+      <div class="product-card ${getStatus(p)}">
+        <div>
+          <strong>${p.name}</strong><br>
+          <span class="tag">${CATEGORY_LABELS[p.category] || ''}</span>
+          <span class="tag">📅 ${p.date || '—'}</span>
+        </div>
+        <div style="text-align:right">
+          <button class="qty-btn" data-action="dec" data-id="${p.id}">-</button>
+          <span>${p.qty}</span>
+          <button class="qty-btn" data-action="inc" data-id="${p.id}">+</button><br>
+          <button class="btn-delete" data-action="edit" data-id="${p.id}">✏️</button>
+          <button class="btn-delete" data-action="del" data-id="${p.id}">🗑</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  onSnapshot(collection(db, "frigo"), (snap) => {
+    products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    render();
+  });
+
+  async function save() {
+    const name = document.getElementById('input-name').value;
+    const qty = parseInt(document.getElementById('input-qty').value);
+    const date = document.getElementById('input-date').value;
+    const location = document.getElementById('input-location').value;
+    const category = document.getElementById('input-category').value;
+
+    if(!name) return;
+    const data = { name, qty, date, location, category };
+
+    if(editingId) {
+      await updateDoc(doc(db, "frigo", editingId), data);
+      editingId = null;
+      document.getElementById('btn-add').textContent = "Ajouter";
+    } else {
+      await addDoc(collection(db, "frigo"), data);
+    }
+    document.getElementById('input-name').value = '';
+  }
+
+  document.getElementById('btn-add').addEventListener('click', save);
+
+  document.getElementById('product-list').addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action]');
+    if(!btn) return;
+    const { action, id } = btn.dataset;
+    const item = products.find(p => p.id === id);
+    if(action === 'inc') await updateDoc(doc(db, "frigo", id), { qty: item.qty + 1 });
+    if(action === 'dec') item.qty > 1 ? await updateDoc(doc(db, "frigo", id), { qty: item.qty - 1 }) : await deleteDoc(doc(db, "frigo", id));
+    if(action === 'del') await deleteDoc(doc(db, "frigo", id));
+    if(action === 'edit') {
+      editingId = id;
+      document.getElementById('input-name').value = item.name;
+      document.getElementById('input-qty').value = item.qty;
+      document.getElementById('input-date').value = item.date;
+      document.getElementById('input-location').value = item.location;
+      document.getElementById('btn-add').textContent = "Modifier";
+    }
+  });
+
+  document.querySelectorAll('.loc-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      activeLocation = tab.dataset.loc;
+      document.querySelectorAll('.loc-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      populateCats(activeLocation);
+      render();
+    });
+  });
+
+  function populateCats(loc) {
+    const sel = document.getElementById('input-category');
+    sel.innerHTML = CATEGORIES[loc].map(c => `<option value="${c.value}">${c.label}</option>`).join('');
+  }
+
+  document.getElementById('search-input').addEventListener('input', (e) => { searchQuery = e.target.value; render(); });
+  populateCats('fridge');
+</script>
 </body>
 </html>
